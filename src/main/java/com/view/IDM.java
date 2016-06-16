@@ -270,7 +270,7 @@ public class IDM implements PropertyChangeListener {
 			status = 1;
 			setUpload2(new Upload2(0, file.getName(), (int) file.length(), 0, 0,
 					FileUploadController.getInstance().createFileLogUpload(getLogFileName())));
-			// uploadDao2.save(upload2);
+			 uploadDao2.save(upload2);
 		}
 		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
 		List<PartFile> partFiles = splitFile();
