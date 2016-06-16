@@ -15,6 +15,12 @@
 	</properties>
 
 	<dependencies>
+		<!-- http://mvnrepository.com/artifact/commons-io/commons-io -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
 		<!-- ORACLE -->
 		<dependency>
 			<groupId>com.oracle</groupId>

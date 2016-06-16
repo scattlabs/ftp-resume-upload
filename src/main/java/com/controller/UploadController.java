@@ -6,6 +6,8 @@ package com.controller;
 import java.io.File;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.config.DataHolder;
 import com.dao.UploadDao2;
 import com.model.Upload2;
@@ -56,7 +58,13 @@ public class UploadController {
 				// MELANJUTKAN
 				setUpload2(upload2);
 				break;
-			}
+			} 
+			/*else if (upload2.getFileName().equals(file.getName()) && upload2.getFileSize() == (int) file.length()
+					&& upload2.getUploadStatus() == 1) {
+				System.out.println(FilenameUtils.getName(file.getName()));
+				setUpload2(new Upload2(0, FilenameUtils.removeExtension(file.getName()) + "1.txt", (int) file.length(),
+						0, 0, ""));
+			}*/
 		}
 		return getUpload2();
 	}

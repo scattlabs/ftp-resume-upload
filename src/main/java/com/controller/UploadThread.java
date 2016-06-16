@@ -4,8 +4,6 @@
 package com.controller;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,11 +13,12 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 
 import com.dao.UploadDao2;
+import com.model.PartFile;
 import com.model.Upload2;
 import com.view.IDM;
-
 
 /**
  * @author ScattLabs
@@ -36,18 +35,19 @@ public class UploadThread extends SwingWorker<Void, Void> {
 	private String username = "updown";
 	private String password = "admin";
 
-	private File fileUpload;
 	private Upload2 upload2;
 	private UploadDao2 uploadDao2;
 	private int status;
 	private IDM idm;
+	FTPClient client;
+	private PartFile partFile;
 
-	public UploadThread(Upload2 upload2, UploadDao2 uploadDao2, File fileUplaod, int status, IDM idm) {
+	public UploadThread(Upload2 upload2, UploadDao2 uploadDao2, PartFile partFile, int status, IDM idm) {
 		this.upload2 = upload2;
 		this.uploadDao2 = uploadDao2;
-		this.fileUpload = fileUplaod;
 		this.status = status;
 		this.setIdm(idm);
+		this.partFile = partFile;
 	}
 
 	// -------------BEGIN SETTER AND GETTER-----------------------//
@@ -81,20 +81,20 @@ public class UploadThread extends SwingWorker<Void, Void> {
 	 */
 	@Override
 	protected Void doInBackground() throws Exception {
-		FTPClient client = new FTPClient();
+		client = new FTPClient();
 		try {
 			client.connect(host);
 			client.login(username, password);
 			client.setFileType(FTPClient.BINARY_FILE_TYPE);
 			client.enterLocalPassiveMode();
-			FileInputStream inputStream;
+			InputStream inputStream = partFile.getStream();
 			InputStream inputStreamSend;
 			try {
-				inputStream = new FileInputStream(fileUpload);
 				byte[] bytesIn = new byte[BUFFER_SIZE];
 				int read = 0;
 				long upTotal = 0;
-				long filesize = fileUpload.length();
+				long filesize = partFile.getFilSize();
+				System.out.println("filesize : " + filesize);
 				long complate = 0;
 				while (upTotal < filesize) {
 					if (filesize < BUFFER_SIZE) {
@@ -106,24 +106,47 @@ public class UploadThread extends SwingWorker<Void, Void> {
 						upTotal += read;
 						switch (getStatus()) {
 						case 1:
+							System.out.println(partFile.getFileName());
 							inputStreamSend = new ByteArrayInputStream(bytesIn);
-							client.appendFile(fileUpload.getName(), inputStreamSend);
-							getUpload2().setLastUpload((int) upTotal);
-							uploadDao2.save(getUpload2());
+							client.appendFile(partFile.getFileName(), inputStreamSend);
+							// getUpload2().setLastUpload((int) upTotal);
+							// uploadDao2.save(getUpload2());
+							/*
+							 * FileUploadController.getInstance().
+							 * setLastSizePartUpload(upload2.getLogPath(),
+							 * "part1", upTotal);
+							 */
 							break;
 
 						case 2:
-							if (upTotal > getUpload2().getLastUpload()) {
+							long lastUpload = getLastUpload();
+							long partially = lastUpload % BUFFER_SIZE;
+							long terminal = lastUpload - partially;
+							if (upTotal == terminal) {
+								// yang sudah dikirim sebelumnya
+								bytesIn = new byte[(int) partially];
+								read = inputStream.read(bytesIn);
+								upTotal += read;
+								// yang belum dikirim
+								bytesIn = new byte[BUFFER_SIZE - (int) partially];
+								read = inputStream.read(bytesIn);
+								upTotal += read;
 								System.out.println("masuk pada byte : " + upTotal);
 								inputStreamSend = new ByteArrayInputStream(bytesIn);
-								client.appendFile(fileUpload.getName(), inputStreamSend);
-								getUpload2().setLastUpload((int) upTotal);
-								uploadDao2.save(getUpload2());
+								client.appendFile(partFile.getFileName(), inputStreamSend);
+								// getUpload2().setLastUpload((int) upTotal);
+								// uploadDao2.save(getUpload2());
+								/*
+								 * FileUploadController.getInstance().
+								 * setLastSizePartUpload(upload2.getLogPath(),
+								 * "part1", upTotal);
+								 */
+								setStatus(1); // normal kembali
 							}
 							break;
 						}
 						complate = (upTotal * PERCENT) / filesize;
-						idm.updateProgress(upTotal, (int) complate);
+						idm.updateProgress(upTotal, (int) complate, partFile.getId());
 						// setProgress((int) complate);
 						System.out.println(client.getReplyString());
 					}
@@ -135,7 +158,9 @@ public class UploadThread extends SwingWorker<Void, Void> {
 				LOGGER.warning(e.getMessage());
 				// TODO Auto-generated catch block
 			}
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			LOGGER.warning(e.getMessage());
 			e.printStackTrace();
 		}
@@ -152,5 +177,22 @@ public class UploadThread extends SwingWorker<Void, Void> {
 			JOptionPane.showMessageDialog(null, "File has been uploaded successfully!", "Message",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
+	}
+
+	// get file in ftp check size
+	public long getLastUpload() {
+		FTPFile file;
+		long size = 0;
+		try {
+			if (client.mlistFile(partFile.getFileName()) != null) {
+				file = client.mlistFile(partFile.getFileName());
+				size = file.getSize();
+				System.out.println(size);
+			}
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return size;
 	}
 }

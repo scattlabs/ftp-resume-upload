@@ -27,6 +27,7 @@ public class Upload2 implements java.io.Serializable {
 	private int fileSize;
 	private int lastUpload;
 	private int uploadStatus;
+	private String logPath;
 
 	/**
 	 * 
@@ -35,13 +36,14 @@ public class Upload2 implements java.io.Serializable {
 		// TODO Auto-generated constructor stub
 	}
 
-	public Upload2(int uploadID, String fileName, int fileSize, int lastUpload, int uploadStatus) {
+	public Upload2(int uploadID, String fileName, int fileSize, int lastUpload, int uploadStatus, String logPath) {
 		super();
 		this.uploadID = uploadID;
 		this.fileName = fileName;
 		this.fileSize = fileSize;
 		this.lastUpload = lastUpload;
 		this.uploadStatus = uploadStatus;
+		this.logPath = logPath;
 	}
 
 	@Id
@@ -90,6 +92,15 @@ public class Upload2 implements java.io.Serializable {
 
 	public void setUploadStatus(int uploadStatus) {
 		this.uploadStatus = uploadStatus;
+	}
+
+	@Column(name = "log_path")
+	public String getLogPath() {
+		return logPath;
+	}
+
+	public void setLogPath(String logPath) {
+		this.logPath = logPath;
 	}
 
 }

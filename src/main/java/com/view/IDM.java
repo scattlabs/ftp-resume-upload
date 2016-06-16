@@ -4,7 +4,14 @@
 package com.view;
 
 import java.awt.EventQueue;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.Color;
@@ -14,16 +21,21 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.config.DataHolder;
+import com.controller.FileUploadController;
 import com.controller.UploadController;
 import com.controller.UploadThread;
 import com.dao.UploadDao2;
+import com.model.PartFile;
 import com.model.Upload2;
 
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.awt.event.ActionEvent;
+import java.awt.Font;
 
 /**
  * @author ScattLabs
@@ -38,9 +50,24 @@ public class IDM implements PropertyChangeListener {
 	JProgressBar progressBar;
 	JLabel lblSizeUpload;
 
-	private JFrame frame;
+	private JFrame frmIupInternetUpload;
 	private Upload2 upload2;
 	private UploadDao2 uploadDao2;
+	private String logFileName = "";
+	private JProgressBar progressBar_1;
+	private JProgressBar progressBar_2;
+	private JProgressBar progressBar_3;
+	private JProgressBar progressBar_4;
+	private JLabel lblSizeupload_1;
+	private JLabel lblSizeupload_2;
+	private JLabel lblSizeupload_3;
+	private JLabel lblSizeupload_4;
+	private static long total = 0;
+	long p1 = 0;
+	long p2 = 0;
+	long p3 = 0;
+	long p4 = 0;
+	JLabel lblStatus;
 
 	/**
 	 * Launch the application.
@@ -53,7 +80,7 @@ public class IDM implements PropertyChangeListener {
 				try {
 					javax.swing.UIManager.setLookAndFeel(lookAndFeel);
 					IDM window = new IDM();
-					window.frame.setVisible(true);
+					window.frmIupInternetUpload.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -66,6 +93,7 @@ public class IDM implements PropertyChangeListener {
 	 */
 	public IDM() {
 		initialize();
+		uploadDao2 = DataHolder.getInstance().getUploadDao2();
 	}
 
 	// ----------------BEGIN SETTER AND GETTER----------------------//
@@ -105,20 +133,29 @@ public class IDM implements PropertyChangeListener {
 		this.lblOutputFileDownload = lblOutputFileDownload;
 	}
 
+	public String getLogFileName() {
+		return logFileName;
+	}
+
+	public void setLogFileName(String logFileName) {
+		this.logFileName = logFileName;
+	}
+
 	// ----------------END SETTER AND GETTER----------------------//
 	/**
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frame = new JFrame();
-		frame.setBounds(100, 100, 450, 423);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().setLayout(null);
+		frmIupInternetUpload = new JFrame();
+		frmIupInternetUpload.setTitle("INTERNET UPLOAD MANAGER");
+		frmIupInternetUpload.setBounds(100, 100, 450, 423);
+		frmIupInternetUpload.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmIupInternetUpload.getContentPane().setLayout(null);
 
 		JPanel panel = new JPanel();
 		panel.setBackground(Color.WHITE);
 		panel.setBounds(10, 11, 414, 165);
-		frame.getContentPane().add(panel);
+		frmIupInternetUpload.getContentPane().add(panel);
 		panel.setLayout(null);
 
 		JButton btnSelectFile = new JButton("Select File");
@@ -162,10 +199,48 @@ public class IDM implements PropertyChangeListener {
 		lblSizeUpload = new JLabel("size upload");
 		lblSizeUpload.setBounds(119, 95, 103, 14);
 		panel.add(lblSizeUpload);
+		
+		lblStatus = new JLabel("");
+		lblStatus.setForeground(Color.RED);
+		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblStatus.setBounds(119, 135, 285, 14);
+		panel.add(lblStatus);
 
 		progressBar = new JProgressBar();
 		progressBar.setBounds(10, 187, 414, 14);
-		frame.getContentPane().add(progressBar);
+		frmIupInternetUpload.getContentPane().add(progressBar);
+
+		progressBar_1 = new JProgressBar();
+		progressBar_1.setBounds(10, 226, 414, 14);
+		frmIupInternetUpload.getContentPane().add(progressBar_1);
+
+		progressBar_2 = new JProgressBar();
+		progressBar_2.setBounds(10, 251, 414, 14);
+		frmIupInternetUpload.getContentPane().add(progressBar_2);
+
+		progressBar_3 = new JProgressBar();
+		progressBar_3.setBounds(10, 276, 414, 14);
+		frmIupInternetUpload.getContentPane().add(progressBar_3);
+
+		progressBar_4 = new JProgressBar();
+		progressBar_4.setBounds(10, 301, 414, 14);
+		frmIupInternetUpload.getContentPane().add(progressBar_4);
+
+		lblSizeupload_1 = new JLabel("sizeUpload");
+		lblSizeupload_1.setBounds(10, 212, 117, 14);
+		frmIupInternetUpload.getContentPane().add(lblSizeupload_1);
+
+		lblSizeupload_2 = new JLabel("sizeUpload");
+		lblSizeupload_2.setBounds(10, 237, 117, 14);
+		frmIupInternetUpload.getContentPane().add(lblSizeupload_2);
+
+		lblSizeupload_3 = new JLabel("sizeUpload");
+		lblSizeupload_3.setBounds(10, 262, 117, 14);
+		frmIupInternetUpload.getContentPane().add(lblSizeupload_3);
+
+		lblSizeupload_4 = new JLabel("sizeUpload");
+		lblSizeupload_4.setBounds(10, 287, 117, 14);
+		frmIupInternetUpload.getContentPane().add(lblSizeupload_4);
 		setUploadDao2(DataHolder.getInstance().getUploadDao2());
 	}
 
@@ -187,16 +262,69 @@ public class IDM implements PropertyChangeListener {
 	}
 
 	private void buttonUploadActionPerformed(ActionEvent event) {
+		setLogFileName(FilenameUtils.removeExtension(file.getName()) + ".txt");
 		progressBar.setValue(0);
-		Upload2 upload2 = UploadController.getInstance().checkFileUpload(this, file);
+		setUpload2(UploadController.getInstance().checkFileUpload(this, file));
 		int status = 2;
-		if (upload2 == null) {
+		if (getUpload2() == null) {
 			status = 1;
-			upload2 = new Upload2(0, file.getName(), (int) file.length(), 0, 0);
+			setUpload2(new Upload2(0, file.getName(), (int) file.length(), 0, 0,
+					FileUploadController.getInstance().createFileLogUpload(getLogFileName())));
+			uploadDao2.save(upload2);
 		}
-		UploadThread thread = new UploadThread(upload2, getUploadDao2(), file, status, this);
-		// thread.addPropertyChangeListener(this);
-		thread.execute();
+		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
+		HashMap<Integer, PartFile> mapStream = splitFile();
+
+		for (Map.Entry<Integer, PartFile> entry : mapStream.entrySet()) {
+			PartFile partFile = entry.getValue();
+			UploadThread thread = new UploadThread(upload2, getUploadDao2(), partFile, status, this);
+			thread.execute();
+		}
+	}
+
+	public HashMap<Integer, PartFile> splitFile() {
+		long fileSize = file.length();
+		int streamCurrent = 1, read = 0;
+		long stream = 4;
+		long mod = 0;
+		byte[] byteChunkPart;
+		HashMap<Integer, PartFile> mapStream = new HashMap<>();
+		if (fileSize <= 4000000000000L) {
+			mod = fileSize % 4;
+			if (mod == 0) {
+				byteChunkPart = new byte[(int) (fileSize / stream)];
+			} else {
+				fileSize -= mod;
+				byteChunkPart = new byte[(int) (fileSize / stream)];
+			}
+		} else {
+			byteChunkPart = new byte[0];
+		}
+		try {
+			FileInputStream fileInputStream = new FileInputStream(file);
+			InputStream inputStreamSend = null;
+			PartFile partFile = new PartFile();
+			while (fileSize > 0) {
+				System.out.println(streamCurrent);
+				if (streamCurrent == stream) {
+					byteChunkPart = new byte[(int) (byteChunkPart.length + mod)];
+				}
+				System.out.println(byteChunkPart.length);
+				read = fileInputStream.read(byteChunkPart);
+				fileSize -= read;
+				assert (read == byteChunkPart.length);
+				inputStreamSend = new ByteArrayInputStream(byteChunkPart);
+				partFile = new PartFile(streamCurrent, file.getName() + ".part" + streamCurrent, byteChunkPart.length,
+						inputStreamSend);
+				mapStream.put(streamCurrent, partFile);
+				streamCurrent++;
+			}
+			fileInputStream.close();
+		} catch (IOException exception) {
+			System.out.println("ex :" + exception.getMessage());
+			exception.printStackTrace();
+		}
+		return mapStream;
 	}
 
 	@Override
@@ -209,10 +337,45 @@ public class IDM implements PropertyChangeListener {
 		}
 	}
 
-	public void updateProgress(long sizeFileUpload, int percent) {
-		getProgressBar().setValue(percent);
-		getLblSizeUpload().setText(sizeFileUpload + " Byte");
-		getLblOutputFileDownload().setText(percent + " %");
+	public void updateProgress(long sizeFileUpload, int percent, int id) {
+		switch (id) {
+		case 1:
+			progressBar_1.setValue(percent);
+			lblSizeupload_1.setText(sizeFileUpload + " Byte");
+			p1 = sizeFileUpload;
+			calculate();
+			break;
+		case 2:
+			progressBar_2.setValue(percent);
+			lblSizeupload_2.setText(sizeFileUpload + " Byte");
+			p2 = sizeFileUpload;
+			calculate();
+			break;
+		case 3:
+			progressBar_3.setValue(percent);
+			lblSizeupload_3.setText(sizeFileUpload + " Byte");
+			p3 = sizeFileUpload;
+			calculate();
+			break;
+		case 4:
+			progressBar_4.setValue(percent);
+			lblSizeupload_4.setText(sizeFileUpload + " Byte");
+			p4 = sizeFileUpload;
+			calculate();
+			break;
+		}
 	}
 
+	public void calculate() {
+		total = 0;
+		total = p1 + p2 + p3 + p4;
+		lblSizeUpload.setText(total + " Byte");
+		int progressCore = (int) ((total * 100) / file.length());
+		progressBar.setValue(progressCore);
+		lblOutputFileDownload.setText("( "+progressCore + " % )");
+		if (progressCore == 100) {
+			getUpload2().setUploadStatus(1);
+			uploadDao2.save(upload2);
+		}
+	}
 }
