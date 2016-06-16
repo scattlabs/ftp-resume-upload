@@ -9,8 +9,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -199,7 +199,7 @@ public class IDM implements PropertyChangeListener {
 		lblSizeUpload = new JLabel("size upload");
 		lblSizeUpload.setBounds(119, 95, 103, 14);
 		panel.add(lblSizeUpload);
-		
+
 		lblStatus = new JLabel("");
 		lblStatus.setForeground(Color.RED);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 12));
@@ -270,53 +270,52 @@ public class IDM implements PropertyChangeListener {
 			status = 1;
 			setUpload2(new Upload2(0, file.getName(), (int) file.length(), 0, 0,
 					FileUploadController.getInstance().createFileLogUpload(getLogFileName())));
-			uploadDao2.save(upload2);
+			// uploadDao2.save(upload2);
 		}
 		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
-		HashMap<Integer, PartFile> mapStream = splitFile();
+		List<PartFile> partFiles = splitFile();
 
-		for (Map.Entry<Integer, PartFile> entry : mapStream.entrySet()) {
-			PartFile partFile = entry.getValue();
-			UploadThread thread = new UploadThread(upload2, getUploadDao2(), partFile, status, this);
+		for (PartFile partFile : partFiles) {
+			UploadThread thread = new UploadThread(upload2, partFile, status, this);
 			thread.execute();
 		}
 	}
 
-	public HashMap<Integer, PartFile> splitFile() {
+	public List<PartFile> splitFile() {
 		long fileSize = file.length();
 		int streamCurrent = 1, read = 0;
 		long stream = 4;
 		long mod = 0;
-		byte[] byteChunkPart;
-		HashMap<Integer, PartFile> mapStream = new HashMap<>();
+		byte[] bytePart;
+		int byteLength = 0;
+		List<PartFile> partFiles = new ArrayList<>();
 		if (fileSize <= 4000000000000L) {
 			mod = fileSize % 4;
 			if (mod == 0) {
-				byteChunkPart = new byte[(int) (fileSize / stream)];
+				byteLength = (int) (fileSize / stream);
 			} else {
 				fileSize -= mod;
-				byteChunkPart = new byte[(int) (fileSize / stream)];
+				byteLength = (int) (fileSize / stream);
 			}
 		} else {
-			byteChunkPart = new byte[0];
+			bytePart = new byte[0];
 		}
 		try {
 			FileInputStream fileInputStream = new FileInputStream(file);
 			InputStream inputStreamSend = null;
 			PartFile partFile = new PartFile();
 			while (fileSize > 0) {
-				System.out.println(streamCurrent);
+				bytePart = new byte[byteLength];
 				if (streamCurrent == stream) {
-					byteChunkPart = new byte[(int) (byteChunkPart.length + mod)];
+					bytePart = new byte[(int) (byteLength + mod)];
 				}
-				System.out.println(byteChunkPart.length);
-				read = fileInputStream.read(byteChunkPart);
+				read = fileInputStream.read(bytePart);
 				fileSize -= read;
-				assert (read == byteChunkPart.length);
-				inputStreamSend = new ByteArrayInputStream(byteChunkPart);
-				partFile = new PartFile(streamCurrent, file.getName() + ".part" + streamCurrent, byteChunkPart.length,
+				assert (read == bytePart.length);
+				inputStreamSend = new ByteArrayInputStream(bytePart);
+				partFile = new PartFile(streamCurrent, file.getName() + ".part" + streamCurrent, bytePart.length,
 						inputStreamSend);
-				mapStream.put(streamCurrent, partFile);
+				partFiles.add(partFile);
 				streamCurrent++;
 			}
 			fileInputStream.close();
@@ -324,7 +323,7 @@ public class IDM implements PropertyChangeListener {
 			System.out.println("ex :" + exception.getMessage());
 			exception.printStackTrace();
 		}
-		return mapStream;
+		return partFiles;
 	}
 
 	@Override
@@ -372,7 +371,7 @@ public class IDM implements PropertyChangeListener {
 		lblSizeUpload.setText(total + " Byte");
 		int progressCore = (int) ((total * 100) / file.length());
 		progressBar.setValue(progressCore);
-		lblOutputFileDownload.setText("( "+progressCore + " % )");
+		lblOutputFileDownload.setText("( " + progressCore + " % )");
 		if (progressCore == 100) {
 			getUpload2().setUploadStatus(1);
 			uploadDao2.save(upload2);

@@ -36,15 +36,13 @@ public class UploadThread extends SwingWorker<Void, Void> {
 	private String password = "admin";
 
 	private Upload2 upload2;
-	private UploadDao2 uploadDao2;
 	private int status;
 	private IDM idm;
 	FTPClient client;
 	private PartFile partFile;
 
-	public UploadThread(Upload2 upload2, UploadDao2 uploadDao2, PartFile partFile, int status, IDM idm) {
+	public UploadThread(Upload2 upload2, PartFile partFile, int status, IDM idm) {
 		this.upload2 = upload2;
-		this.uploadDao2 = uploadDao2;
 		this.status = status;
 		this.setIdm(idm);
 		this.partFile = partFile;
@@ -95,6 +93,7 @@ public class UploadThread extends SwingWorker<Void, Void> {
 				long upTotal = 0;
 				long filesize = partFile.getFilSize();
 				System.out.println("filesize : " + filesize);
+				System.out.println("status : " + getStatus());
 				long complate = 0;
 				while (upTotal < filesize) {
 					if (filesize < BUFFER_SIZE) {
@@ -106,16 +105,8 @@ public class UploadThread extends SwingWorker<Void, Void> {
 						upTotal += read;
 						switch (getStatus()) {
 						case 1:
-							System.out.println(partFile.getFileName());
 							inputStreamSend = new ByteArrayInputStream(bytesIn);
 							client.appendFile(partFile.getFileName(), inputStreamSend);
-							// getUpload2().setLastUpload((int) upTotal);
-							// uploadDao2.save(getUpload2());
-							/*
-							 * FileUploadController.getInstance().
-							 * setLastSizePartUpload(upload2.getLogPath(),
-							 * "part1", upTotal);
-							 */
 							break;
 
 						case 2:
@@ -134,13 +125,6 @@ public class UploadThread extends SwingWorker<Void, Void> {
 								System.out.println("masuk pada byte : " + upTotal);
 								inputStreamSend = new ByteArrayInputStream(bytesIn);
 								client.appendFile(partFile.getFileName(), inputStreamSend);
-								// getUpload2().setLastUpload((int) upTotal);
-								// uploadDao2.save(getUpload2());
-								/*
-								 * FileUploadController.getInstance().
-								 * setLastSizePartUpload(upload2.getLogPath(),
-								 * "part1", upTotal);
-								 */
 								setStatus(1); // normal kembali
 							}
 							break;
