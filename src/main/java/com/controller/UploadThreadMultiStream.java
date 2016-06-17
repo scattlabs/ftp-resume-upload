@@ -4,8 +4,6 @@
 package com.controller;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,16 +15,17 @@ import javax.swing.SwingWorker;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 
+import com.model.PartFile;
 import com.model.Upload2;
-import com.view.IDM;
+import com.view.IDMMultiStream;
 
 /**
  * @author ScattLabs
  *
  */
-public class UploadThread extends SwingWorker<Void, Void> {
+public class UploadThreadMultiStream extends SwingWorker<Void, Void> {
 
-	static final Logger LOGGER = Logger.getLogger(UploadThread.class.getName());
+	static final Logger LOGGER = Logger.getLogger(UploadThreadMultiStream.class.getName());
 
 	private static final int BUFFER_SIZE = 1024000;// 4096
 	private static final int PERCENT = 100;// 4096
@@ -37,15 +36,15 @@ public class UploadThread extends SwingWorker<Void, Void> {
 
 	private Upload2 upload2;
 	private int status;
-	private IDM idm;
+	private IDMMultiStream idm;
 	FTPClient client;
-	private File fileUpload;
+	private PartFile partFile;
 
-	public UploadThread(Upload2 upload2, File fileUpload, int status, IDM idm) {
+	public UploadThreadMultiStream(Upload2 upload2, PartFile partFile, int status, IDMMultiStream idm) {
 		this.upload2 = upload2;
 		this.status = status;
-		this.setIdm(idm);
-		this.fileUpload = fileUpload;
+		this.idm = idm;
+		this.partFile = partFile;
 	}
 
 	// -------------BEGIN SETTER AND GETTER-----------------------//
@@ -65,11 +64,11 @@ public class UploadThread extends SwingWorker<Void, Void> {
 		this.status = status;
 	}
 
-	public IDM getIdm() {
+	public IDMMultiStream getIdm() {
 		return idm;
 	}
 
-	public void setIdm(IDM idm) {
+	public void setIdm(IDMMultiStream idm) {
 		this.idm = idm;
 	}
 
@@ -85,14 +84,13 @@ public class UploadThread extends SwingWorker<Void, Void> {
 			client.login(username, password);
 			client.setFileType(FTPClient.BINARY_FILE_TYPE);
 			client.enterLocalPassiveMode();
-			// InputStream inputStream = partFile.getStream();
-			FileInputStream inputStream = new FileInputStream(fileUpload);
+			InputStream inputStream = partFile.getStream();
 			InputStream inputStreamSend;
 			try {
 				byte[] bytesIn = new byte[BUFFER_SIZE];
 				int read = 0;
 				long upTotal = 0;
-				long filesize = fileUpload.length();
+				long filesize = partFile.getFilSize();
 				System.out.println("filesize : " + filesize);
 				System.out.println("status : " + getStatus());
 				long complate = 0;
@@ -107,9 +105,7 @@ public class UploadThread extends SwingWorker<Void, Void> {
 						switch (getStatus()) {
 						case 1:
 							inputStreamSend = new ByteArrayInputStream(bytesIn);
-							client.appendFile(fileUpload.getName(), inputStreamSend);
-							complate = (upTotal * PERCENT) / filesize;
-							idm.updateProgress(upTotal, (int) complate, 1);
+							client.appendFile(partFile.getFileName(), inputStreamSend);
 							break;
 
 						case 2:
@@ -127,13 +123,13 @@ public class UploadThread extends SwingWorker<Void, Void> {
 								upTotal += read;
 								System.out.println("masuk pada byte : " + upTotal);
 								inputStreamSend = new ByteArrayInputStream(bytesIn);
-								client.appendFile(fileUpload.getName(), inputStreamSend);
+								client.appendFile(partFile.getFileName(), inputStreamSend);
 								setStatus(1); // normal kembali
 							}
-							complate = (getLastUpload() * PERCENT) / filesize;
-							idm.updateProgress(getLastUpload(), (int) complate, 1);
 							break;
 						}
+						complate = (upTotal * PERCENT) / filesize;
+						idm.updateProgress(upTotal, (int) complate, partFile.getId());
 						// setProgress((int) complate);
 						System.out.println(client.getReplyString());
 					}
@@ -171,8 +167,8 @@ public class UploadThread extends SwingWorker<Void, Void> {
 		FTPFile file;
 		long size = 0;
 		try {
-			if (client.mlistFile(fileUpload.getName()) != null) {
-				file = client.mlistFile(fileUpload.getName());
+			if (client.mlistFile(partFile.getFileName()) != null) {
+				file = client.mlistFile(partFile.getFileName());
 				size = file.getSize();
 				System.out.println(size);
 			}

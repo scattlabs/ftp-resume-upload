@@ -25,8 +25,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.config.DataHolder;
 import com.controller.FileUploadController;
-import com.controller.UploadController;
-import com.controller.UploadThread;
+import com.controller.UploadControllerMultiStream;
+import com.controller.UploadThreadMultiStream;
 import com.dao.UploadDao2;
 import com.model.PartFile;
 import com.model.Upload2;
@@ -41,7 +41,7 @@ import java.awt.Font;
  * @author ScattLabs
  *
  */
-public class IDM implements PropertyChangeListener {
+public class IDMMultiStream implements PropertyChangeListener {
 
 	private File file;
 	JLabel lblOutputFileName;
@@ -80,7 +80,7 @@ public class IDM implements PropertyChangeListener {
 				String lookAndFeel = javax.swing.UIManager.getSystemLookAndFeelClassName();
 				try {
 					javax.swing.UIManager.setLookAndFeel(lookAndFeel);
-					IDM window = new IDM();
+					IDMMultiStream window = new IDMMultiStream();
 					window.frmIupInternetUpload.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -92,7 +92,7 @@ public class IDM implements PropertyChangeListener {
 	/**
 	 * Create the application.
 	 */
-	public IDM() {
+	public IDMMultiStream() {
 		initialize();
 		uploadDao2 = DataHolder.getInstance().getUploadDao2();
 	}
@@ -148,7 +148,7 @@ public class IDM implements PropertyChangeListener {
 	 */
 	private void initialize() {
 		frmIupInternetUpload = new JFrame();
-		frmIupInternetUpload.setTitle("INTERNET UPLOAD MANAGER");
+		frmIupInternetUpload.setTitle("MULTISTREAM IUM");
 		frmIupInternetUpload.setBounds(100, 100, 450, 423);
 		frmIupInternetUpload.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmIupInternetUpload.getContentPane().setLayout(null);
@@ -271,7 +271,7 @@ public class IDM implements PropertyChangeListener {
 	private void buttonUploadActionPerformed(ActionEvent event) {
 		setLogFileName(FilenameUtils.removeExtension(file.getName()) + ".txt");
 		progressBar.setValue(0);
-		setUpload2(UploadController.getInstance().checkFileUpload(this, file));
+		setUpload2(UploadControllerMultiStream.getInstance().checkFileUpload(this, file));
 		int status = 2;
 		if (getUpload2() == null) {
 			status = 1;
@@ -280,12 +280,12 @@ public class IDM implements PropertyChangeListener {
 			uploadDao2.save(upload2);
 		}
 		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
-		// List<PartFile> partFiles = splitFile();
+		List<PartFile> partFiles = splitFile();
 		lblproses.setText("send file");
-		// for (PartFile partFile : partFiles) {
-		UploadThread thread = new UploadThread(upload2, file, status, this);
-		thread.execute();
-		// }
+		for (PartFile partFile : partFiles) {
+			UploadThreadMultiStream thread = new UploadThreadMultiStream(upload2, partFile, status, this);
+			thread.execute();
+		}
 	}
 
 	public List<PartFile> splitFile() {
