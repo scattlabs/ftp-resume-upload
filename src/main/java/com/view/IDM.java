@@ -280,12 +280,12 @@ public class IDM implements PropertyChangeListener {
 			uploadDao2.save(upload2);
 		}
 		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
-		List<PartFile> partFiles = splitFile();
+//		List<PartFile> partFiles = splitFile();
 		lblproses.setText("send file");
-		for (PartFile partFile : partFiles) {
-			UploadThread thread = new UploadThread(upload2, partFile, status, this);
+//		for (PartFile partFile : partFiles) {
+			UploadThread thread = new UploadThread(upload2, file, status, this);
 			thread.execute();
-		}
+//		}
 	}
 
 	public List<PartFile> splitFile() {
