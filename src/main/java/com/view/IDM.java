@@ -68,6 +68,7 @@ public class IDM implements PropertyChangeListener {
 	long p3 = 0;
 	long p4 = 0;
 	JLabel lblStatus;
+	JLabel lblproses;
 
 	/**
 	 * Launch the application.
@@ -203,8 +204,14 @@ public class IDM implements PropertyChangeListener {
 		lblStatus = new JLabel("");
 		lblStatus.setForeground(Color.RED);
 		lblStatus.setFont(new Font("Tahoma", Font.PLAIN, 12));
-		lblStatus.setBounds(119, 135, 285, 14);
+		lblStatus.setBounds(119, 135, 111, 14);
 		panel.add(lblStatus);
+
+		lblproses = new JLabel("");
+		lblproses.setForeground(Color.RED);
+		lblproses.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblproses.setBounds(240, 135, 164, 14);
+		panel.add(lblproses);
 
 		progressBar = new JProgressBar();
 		progressBar.setBounds(10, 187, 414, 14);
@@ -270,11 +277,11 @@ public class IDM implements PropertyChangeListener {
 			status = 1;
 			setUpload2(new Upload2(0, file.getName(), (int) file.length(), 0, 0,
 					FileUploadController.getInstance().createFileLogUpload(getLogFileName())));
-			 uploadDao2.save(upload2);
+			uploadDao2.save(upload2);
 		}
 		lblStatus.setText(status == 1 ? "New Upload" : "Resume Upload");
 		List<PartFile> partFiles = splitFile();
-
+		lblproses.setText("send file");
 		for (PartFile partFile : partFiles) {
 			UploadThread thread = new UploadThread(upload2, partFile, status, this);
 			thread.execute();
@@ -282,6 +289,7 @@ public class IDM implements PropertyChangeListener {
 	}
 
 	public List<PartFile> splitFile() {
+		lblproses.setText("split file");
 		long fileSize = file.length();
 		int streamCurrent = 1, read = 0;
 		long stream = 4;
@@ -290,7 +298,7 @@ public class IDM implements PropertyChangeListener {
 		int byteLength = 0;
 		List<PartFile> partFiles = new ArrayList<>();
 		if (fileSize <= 4000000000000L) {
-			mod = fileSize % 4;
+			mod = fileSize % stream;
 			if (mod == 0) {
 				byteLength = (int) (fileSize / stream);
 			} else {
